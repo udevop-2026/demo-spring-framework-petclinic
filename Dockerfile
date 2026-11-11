@@ -1,4 +1,3 @@
-Multi stage Dockerfile
 
 # --------------------------------
 # Stage 1: Build the Application
@@ -34,20 +33,31 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 
-# --------------------------------
-# Stage 2: Run Application on Tomcat
-# --------------------------------
-FROM tomcat:11-jdk21-temurin
+# -------------------------------
+# Stage 2: Install Tomcat manually
+# -------------------------------
+FROM ubuntu:24.04
 
-# Remove default Tomcat applications
-RUN rm -rf /usr/local/tomcat/webapps/*
+RUN apt-get update && \
+    apt-get install -y openjdk-21-jdk wget tar && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy WAR file from Stage 1
+ENV CATALINA_HOME=/opt/tomcat                   
+ENV PATH=$CATALINA_HOME/bin:$PATH               
+
+RUN mkdir -p $CATALINA_HOME            
+
+RUN wget https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.27/bin/apache-tomcat-11.0.27.tar.gz && \
+    tar -xzf apache-tomcat-11.0.27.tar.gz \
+    --strip-components=1 \
+    -C $CATALINA_HOME && \
+    rm apache-tomcat-11.0.27.tar.gz
+
+
 COPY --from=builder /app/target/petclinic.war \
-    /usr/local/tomcat/webapps/petclinic.war
+    $CATALINA_HOME/webapps/petclinic.war
 
-# Tomcat port
-EXPOSE 6060
+EXPOSE 8080
 
-# Start Tomcat
 CMD ["catalina.sh", "run"]
+
