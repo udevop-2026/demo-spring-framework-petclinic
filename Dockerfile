@@ -8,7 +8,7 @@ RUN apt-get install -y maven
 
 WORKDIR /app
 
-COPY pom.xml
+COPY pom.xml .
 
 RUN mvn dependency:go-offline -B
 
